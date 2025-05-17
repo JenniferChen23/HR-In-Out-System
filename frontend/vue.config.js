@@ -11,7 +11,7 @@ module.exports = defineConfig({
     port: 8000,
     proxy: {
       "/api": {
-        target: process.env.VUE_APP_API_BASE_URL || "http://localhost:3000",
+        target: "http://34.80.60.228:8080",
         changeOrigin: true,
         secure: false,
       },
@@ -22,3 +22,6 @@ module.exports = defineConfig({
     },
   },
 });
+
+
+console.log("👉 vue.config.js loaded with proxy config");

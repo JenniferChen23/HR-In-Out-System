@@ -43,8 +43,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import axios from "axios";
 import { addDays, format } from "date-fns";
+import { onMounted, ref } from "vue";
+
 import StatusTable from "@/components/StatusTable.vue";
 import SideBar from "../components/SideBar.vue";
 // import api from "@/api"; // 如果登入 API 暫時沒用到可以先註解
@@ -54,13 +56,11 @@ const headers = ref([
   { text: "Name", value: "name" },
 ]);
 
-const departments = [
-  { text: "All", value: "" },
-  { text: "HR", value: "HR" },
-  { text: "Engineering", value: "Engineering" },
-  { text: "Sales", value: "Sales" },
-  { text: "Marketing", value: "Marketing" },
-];
+// 假設這是登入後保存在 localStorage 的使用者資訊
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InFsbG95ZEBleGFtcGxlLmNvbSIsImV4cCI6MTc0NzcxOTA0OCwidXNlcl9pZCI6IjU2ZWEyNDc1LWM2N2ItNDVjYy1iNzI4LWI1YTE3OGYzNjEwMSJ9.cFjyrEH6JyIFHlMGu4RxJDszPbd0I9SY-9qcFhTEx0U"; // <-- 放你的完整 JWT token
+const userID = "56ea2475-c67b-45cc-b728-b5a178f36101"; // <-- 放登入回傳的 EmployeeID
+
+const departments = ref([]);
 const selectedDepartment = ref("");
 const items = ref([]);
 const selectedDate = ref("");
@@ -130,6 +130,27 @@ function generateItems(baseDate) {
   });
 }
 
+async function fetchDepartments() {
+  try {
+    const response = await axios.get(
+      `/api/report/inChargeDepartment/${userID}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    const data = response.data;
+
+    departments.value = [
+      { text: "All", value: "" },
+      ...data.map((dep) => ({ text: dep, value: dep })),
+    ];
+  } catch (error) {
+    console.error("無法取得部門資料", error);
+  }
+}
+
 function updateData() {
   if (!selectedDate.value) return;
   const baseDate = new Date(selectedDate.value);
@@ -143,5 +164,6 @@ onMounted(() => {
   selectedDepartment.value = "";
   generateHeaders(today);
   generateItems(today);
+  fetchDepartments();
 });
 </script>
