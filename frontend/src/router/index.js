@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import UserLogin from "../views/UserLogin.vue"; // 確保這裡是引入 UserLogin
-import TodayAttendence from "../views/Today.vue";
+import TodayAttendence from "../views/TodayLog.vue";
 import AttendenceLog from "../views/AttendenceLog.vue";
 import MyTeam from "../views/MyTeam.vue";
 

@@ -10,43 +10,55 @@
       <h2>Login</h2>
       <v-text-field
         clearable
-        label="Account"
+        label="E-mail"
         variant="outlined"
         class="centered-input"
+        v-model="email"
       />
       <v-text-field
         clearable
         label="Password"
         variant="outlined"
+        v-model="password"
         class="centered-input"
       />
 
-      <v-btn height:20px variant="tonal" @click="goToTodo"> Submit </v-btn>
+      <v-btn height:20px variant="tonal" @click="login"> Submit </v-btn>
     </div>
   </SideBar>
 </template>
 
-<script>
+<script setup>
+import { ref } from "vue";
 import { useRouter } from "vue-router";
-import SideBar from "../components/SideBar.vue";
+import api from "@/api"; // @ 代表 src 目錄
 
-export default {
-  name: "UserLogin",
-  components: {
-    SideBar, // ✅ 在這裡註冊才會生效
-  },
-  setup() {
-    const router = useRouter();
+// 用 ref 來存使用者輸入
+const email = ref("");
+const password = ref("");
 
-    function goToTodo() {
-      router.push("/today");
-    }
+const router = useRouter();
 
-    return {
-      goToTodo,
-    };
-  },
-};
+async function login() {
+  try {
+    const response = await api.post("/api/auth/login", {
+      email: email.value, // 用變數帶入
+      password: password.value, // 用變數帶入
+    });
+
+    const { message, token, user } = response.data;
+
+    console.log(message); // "Login successful"
+    console.log(token); // "your.jwt.token"
+    console.log(user); // { id: 1, email: "...", name: "John Doe" }
+
+    localStorage.setItem("jwt", token);
+    localStorage.setItem("userID", user.id);
+    router.push("/today");
+  } catch (err) {
+    console.error("Login failed:", err.response?.data || err.message);
+  }
+}
 </script>
 
 <style scoped>

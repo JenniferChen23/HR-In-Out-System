@@ -2,113 +2,164 @@
   <v-app>
     <SideBar>
       <v-container>
-        <!-- 下拉選單 -->
-        <v-card title="Department" flat width="30%">
-          <SelectBox
-            v-model="selectedDepartment"
-            :items="Department"
-          ></SelectBox>
-          <p>你選的是：{{ selectedDepartment }}</p>
-        </v-card>
-        <!-- 時間表 -->
-        <div class="v-card-title">Date</div>
-        <div class="filter">
-          <v-card elevation="0" class="datepicker-container">
-            <VueDatePicker
-              v-model="Startdate"
-              class="custom-datepicker"
-              teleport="body"
-              ref="startDatePicker"
-              type="date"
-              :enable-time-picker="false"
-            />
-          </v-card>
-          <p>To</p>
-          <v-card elevation="0" class="datepicker-container">
-            <VueDatePicker
-              v-model="Enddate"
-              class="custom-datepicker"
-              teleport="body"
-              ref="endDatePicker"
-              :enable-time-picker="false"
-            />
-          </v-card>
-          <v-btn variant="tonal" color="blue"> This Month </v-btn>
-          <v-btn variant="tonal" color="blue"> This Week </v-btn>
-          <v-btn variant="tonal" color="black"> Analysis Chart </v-btn>
-        </div>
-
+        <v-row
+          ><v-col><h2>Department</h2></v-col></v-row
+        >
+        <v-row>
+          <v-col>
+            <v-card flat width="30%">
+              <SelectBox
+                v-model="selectedDepartment"
+                :items="Department"
+              ></SelectBox>
+            </v-card>
+          </v-col>
+        </v-row>
         <!-- 放總體出勤分析表 -->
-        <v-card title="OverTime Summary" flat>
-          <v-table class="d-flex justify-center">
-            <thead>
-              <tr>
-                <th
-                  v-for="header in headers"
-                  :key="header.value"
-                  class="text-center"
-                  style="background-color: #f5f5f5"
-                >
-                  {{ header.text }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in summary" :key="item.name" class="text-center">
-                <td>
-                  <WorkSummaryCard
-                    :totalWorkHours="item.TotalWorkHours"
-                    :unit="'hr'"
-                    :timeUnit="'month'"
-                    :lastRecord="1968"
-                  />
-                </td>
-                <td>
-                  <WorkSummaryCard
-                    :totalWorkHours="item.TotalOTHours"
-                    :unit="'hr'"
-                    :timeUnit="'month'"
-                    :lastRecord="1968"
-                  />
-                </td>
-                <td>
-                  <WorkSummaryCard
-                    :totalWorkHours="item.OTHoursPerson"
-                    :unit="'hr'"
-                    :timeUnit="'month'"
-                    :lastRecord="12.3"
-                  />
-                </td>
-                <td>
-                  <WorkSummaryCard
-                    :totalWorkHours="item.OTHeadcounts"
-                    :unit="'p'"
-                    :timeUnit="'month'"
-                    :lastRecord="9"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </v-card>
-        <!-- 超時工作表 -->
-        <v-card title="OverTime Alert List" flat>
-          <template v-slot:text>
-            <v-text-field
-              v-model="search"
-              label="Search"
-              prepend-inner-icon="mdi-magnify"
-              variant="outlined"
-              hide-details
-              single-line
-            ></v-text-field>
-          </template>
-          <DataTable
-            :show-headers="headers2"
-            :items="testData"
-            :search="search"
-          />
-        </v-card>
+        <v-row>
+          <v-col><h2>Over Time Summary</h2></v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" color="blue"> This Month </v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" color="blue"> This Week </v-btn>
+          </v-col>
+        </v-row>
+        <v-row class="mb-6">
+          <v-col>
+            <v-card>
+              <v-table class="d-flex justify-center">
+                <thead>
+                  <tr>
+                    <th
+                      v-for="header in headers"
+                      :key="header.value"
+                      class="text-center"
+                      style="background-color: #f5f5f5"
+                    >
+                      {{ header.text }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="item in summary"
+                    :key="item.name"
+                    class="text-center"
+                  >
+                    <td>
+                      <WorkSummaryCard
+                        :totalWorkHours="item.TotalWorkHours"
+                        :unit="'hr'"
+                        :timeUnit="'month'"
+                        :lastRecord="1968"
+                      />
+                    </td>
+                    <td>
+                      <WorkSummaryCard
+                        :totalWorkHours="item.TotalOTHours"
+                        :unit="'hr'"
+                        :timeUnit="'month'"
+                        :lastRecord="1968"
+                      />
+                    </td>
+                    <td>
+                      <WorkSummaryCard
+                        :totalWorkHours="item.OTHoursPerson"
+                        :unit="'hr'"
+                        :timeUnit="'month'"
+                        :lastRecord="12.3"
+                      />
+                    </td>
+                    <td>
+                      <WorkSummaryCard
+                        :totalWorkHours="item.OTHeadcounts"
+                        :unit="'p'"
+                        :timeUnit="'month'"
+                        :lastRecord="9"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-card>
+          </v-col>
+        </v-row>
+        <!-- 長條圖 -->
+        <v-row>
+          <v-col><h2>Analysis Chart</h2></v-col>
+        </v-row>
+        <v-row align="center">
+          <v-col cols="auto">
+            <v-card elevation="0" class="datepicker-container">
+              <VueDatePicker
+                v-model="Startdate"
+                class="custom-datepicker"
+                teleport="body"
+                ref="startDatePicker"
+                type="date"
+                :enable-time-picker="false"
+              />
+            </v-card>
+          </v-col>
+          <v-col cols="auto">to</v-col>
+          <v-col cols="auto">
+            <v-card elevation="0" class="datepicker-container">
+              <VueDatePicker
+                v-model="Enddate"
+                class="custom-datepicker"
+                teleport="body"
+                ref="endDatePicker"
+                :enable-time-picker="false"
+              />
+            </v-card>
+          </v-col>
+          <v-col cols="auto" class="d-flex align-center">
+            <v-radio-group
+              inline
+              class="d-flex align-center"
+              v-model="granularity"
+            >
+              <v-radio label="Day" value="day"></v-radio>
+              <v-radio label="Week" value="week"></v-radio>
+              <v-radio label="Month " value="month"></v-radio>
+            </v-radio-group>
+          </v-col>
+        </v-row>
+        <v-row class="mb-6">
+          <bar-chart
+            :data="data"
+            :granularity="granularity"
+            :labels="LabelData"
+            :startDate="Startdate"
+            :endDate="Enddate"
+            title="OT-HeadCounts"
+        /></v-row>
+
+        <v-row>
+          <v-col><h2>Alert List</h2></v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-card flat>
+              <template v-slot:text>
+                <v-text-field
+                  v-model="search"
+                  label="Search"
+                  prepend-inner-icon="mdi-magnify"
+                  variant="outlined"
+                  hide-details
+                  single-line
+                ></v-text-field>
+              </template>
+              <DataTable
+                :show-headers="headers2"
+                :items="testData"
+                :search="search"
+              />
+            </v-card>
+          </v-col>
+        </v-row>
       </v-container>
     </SideBar>
   </v-app>
@@ -119,19 +170,26 @@ import SideBar from "../components/SideBar.vue";
 import SelectBox from "../components/SelectBox.vue";
 import WorkSummaryCard from "../components/SummaryCard.vue";
 import DataTable from "../components/DataTable.vue";
-import { ref, onMounted } from "vue";
-import VueDatePicker from "@vuepic/vue-datepicker";
-import "@vuepic/vue-datepicker/dist/main.css";
+import { ref } from "vue";
+
+import BarChart from "../components/BarChart.vue";
 
 export default {
   name: "MyTeam",
-  components: { SelectBox, SideBar, WorkSummaryCard, DataTable, VueDatePicker },
+  components: {
+    SideBar,
+    WorkSummaryCard,
+    DataTable,
+    SelectBox,
+    BarChart,
+  },
   setup() {
-    const selectedDepartment = ref("");
+    const selectedDepartment = ref("All");
     const Startdate = ref();
     const Enddate = ref();
     const startDatePicker = ref(null);
     const endDatePicker = ref(null);
+    const granularity = ref("");
 
     const headers = [
       { text: "Total Work Hours", value: "TotalWorkHours" },
@@ -147,6 +205,7 @@ export default {
       { text: "Status", value: "status" },
     ];
     const Department = [
+      "All",
       "Sales",
       "Marketing",
       "Human Resources",
@@ -193,47 +252,8 @@ export default {
       },
     ];
 
-    onMounted(() => {
-      // 調整 Startdate DatePicker 位置
-      const startInput = startDatePicker.value.$el.querySelector(".dp__input");
-      const endInput = endDatePicker.value.$el.querySelector(".dp__input");
-      const menus = document.querySelectorAll(".dp__menu");
-
-      const updatePosition = (input, menu) => {
-        if (input && menu) {
-          const rect = input.getBoundingClientRect();
-          menu.style.left = `${rect.left}px`; // 動態設置 left 為輸入框的左邊緣
-          menu.style.top = `${rect.bottom + 4}px`; // 設置為輸入框底部 + 4px
-          menu.style.transform = "none"; // 移除 transform
-          menu.style.width = `${rect.width}px`; // 與輸入框同寬
-          menu.style.maxWidth = "200px";
-        }
-      };
-
-      if (startInput && menus[0]) {
-        startInput.addEventListener("click", () =>
-          updatePosition(startInput, menus[0])
-        );
-        window.addEventListener("scroll", () =>
-          updatePosition(startInput, menus[0])
-        );
-        window.addEventListener("resize", () =>
-          updatePosition(startInput, menus[0])
-        );
-      }
-
-      if (endInput && menus[1]) {
-        endInput.addEventListener("click", () =>
-          updatePosition(endInput, menus[1])
-        );
-        window.addEventListener("scroll", () =>
-          updatePosition(endInput, menus[1])
-        );
-        window.addEventListener("resize", () =>
-          updatePosition(endInput, menus[1])
-        );
-      }
-    });
+    const LabelData = ["2024-04/W4", "2024-04/W5", "2024-05/W1"];
+    const data = [10, 5, 7];
 
     return {
       selectedDepartment,
@@ -246,6 +266,9 @@ export default {
       Enddate,
       startDatePicker,
       endDatePicker,
+      LabelData,
+      granularity,
+      data,
     };
   },
 };
@@ -258,9 +281,18 @@ export default {
 
 .filter {
   display: grid;
-  grid-template-columns: auto auto auto auto auto auto;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
   gap: 16px;
-  align-items: end;
+  margin-bottom: 10px;
+}
+
+.filter2 {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
 .datepicker-container {
@@ -272,7 +304,7 @@ export default {
 .custom-datepicker .dp__input {
   width: 100%;
   box-sizing: border-box;
-  height: 32px;
+  height: 40px;
   font-size: 14px;
 }
 
