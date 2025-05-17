@@ -1,21 +1,19 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.VUE_APP_API_BASE_URL,
+  baseURL: "/", // 開發環境靠 proxy，正式環境可能改成真實 API 網址
 });
 
-// 在每次發 request 前，自動加入 Authorization header
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("jwt");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("Request Headers:", config.headers);
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 export default api;

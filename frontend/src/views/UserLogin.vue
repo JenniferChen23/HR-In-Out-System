@@ -53,7 +53,7 @@ async function login() {
     console.log(user); // { id: 1, email: "...", name: "John Doe" }
 
     localStorage.setItem("jwt", token);
-    localStorage.setItem("userID", user.id);
+    localStorage.setItem("userID", user.EmployeeID);
     router.push("/today");
   } catch (err) {
     console.error("Login failed:", err.response?.data || err.message);
