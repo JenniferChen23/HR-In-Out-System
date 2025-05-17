@@ -20,7 +20,11 @@
             </thead>
 
             <tbody>
-              <tr v-for="item in records" :key="item.name" class="text-center">
+              <tr
+                v-for="item in todayRecord"
+                :key="item.name"
+                class="text-center"
+              >
                 <td>{{ item.date }}</td>
                 <td>{{ item.name }}</td>
                 <td>{{ item.ClockInTime }}</td>
@@ -65,13 +69,13 @@
           <!-- 使用 DataTable 組件，並傳遞資料 -->
           <DataTable
             :show-headers="headers.text"
-            :items="historyRecords"
+            :items="records"
             :search="search"
           />
         </v-card>
         <div class="export">
-          <ExportButton> Export as CSV </ExportButton>
-          <ExportButton> Export as PDF </ExportButton>
+          <ExportButton @click="exportAsCSV"> Export as CSV </ExportButton>
+          <ExportButton @click="exportAsPDF"> Export as PDF </ExportButton>
         </div>
       </v-container>
     </SideBar>
@@ -86,9 +90,11 @@ import StatusCard from "../components/StatusCard.vue";
 import ExportButton from "../components/ExportButton.vue";
 import api from "@/api";
 
+const todayRecord = ref([]);
 const records = ref([]);
-let userID = 13;
+const userID = localStorage.getItem("userID");
 const search = ref("");
+const token = localStorage.getItem("jwt");
 
 const headers = [
   { text: "Date", value: "date" },
@@ -101,9 +107,59 @@ const headers = [
   // { text: "Duration", value: "Duration" }, //後端沒寫所以先不放
 ];
 
+async function exportAsCSV() {
+  try {
+    const response = await api.get(`/api/report/myRecords/${userID}`);
+    if (response && response.data) {
+      // 包成陣列並轉成 template 用的 key
+      todayRecord.value = [
+        {
+          date: response.data.date,
+          name: response.data.name,
+          ClockInTime: response.data.clock_in_time,
+          ClockOutTime: response.data.clock_out_time,
+          ClockInGate: response.data.clock_in_gate,
+          ClockOutGate: response.data.clock_out_gate,
+          status: response.data.status,
+        },
+      ];
+    }
+  } catch (error) {
+    console.error("取得今日紀錄錯誤", error);
+  }
+}
+
+console.log("fetchHistoryRecords id:", userID);
+
 async function fetchTodayRecords() {
   try {
-    const response = await api.get(`/report/myRecords/${userID}`);
+    const response = await api.get(`/api/report/myRecords/${userID}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (response && response.data) {
+      // 包成陣列並轉成 template 用的 key
+      todayRecord.value = [
+        {
+          date: response.data.date,
+          name: response.data.name,
+          ClockInTime: response.data.clock_in_time,
+          ClockOutTime: response.data.clock_out_time,
+          ClockInGate: response.data.clock_in_gate,
+          ClockOutGate: response.data.clock_out_gate,
+          status: response.data.status,
+        },
+      ];
+    }
+  } catch (error) {
+    console.error("取得今日紀錄錯誤", error);
+  }
+}
+
+async function fetchHistoryRecords() {
+  try {
+    const response = await api.get(`/report/historyRecords/${userID}`);
     if (response && response.data) {
       // 包成陣列並轉成 template 用的 key
       records.value = [
@@ -123,60 +179,13 @@ async function fetchTodayRecords() {
   }
 }
 
-const historyRecords = [
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    ClockInTime: "09:00",
-    ClockOutTime: "17:00",
-    ClockInGate: "Gate A",
-    ClockOutGate: "Gate B",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "Late",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    checkInTime: "08:45",
-    checkOutTime: "17:05",
-    checkInGate: "Gate B",
-    checkOutGate: "Gate C",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "On Time",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    ClockInTime: "09:20",
-    ClockOutTime: "16:55",
-    ClockInGate: "Gate A",
-    ClockOutGate: "Gate A",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "Late",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    checkInTime: "08:30",
-    checkOutTime: "17:15",
-    checkInGate: "Gate C",
-    checkOutGate: "Gate B",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "On Time",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    ClockInTime: "09:10",
-    ClockOutTime: "16:40",
-    ClockInGate: "Gate B",
-    ClockOutGate: "Gate C",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "Abnormal",
-  },
-];
 onMounted(() => {
+  const userID = localStorage.getItem("userID");
+  console.log("抓到的 userID:", userID);
+  const jwt = localStorage.getItem("jwt");
+  console.log("抓到的 token:", jwt);
   fetchTodayRecords();
+  fetchHistoryRecords();
 });
 </script>
 
