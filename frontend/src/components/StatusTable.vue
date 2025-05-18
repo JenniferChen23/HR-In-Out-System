@@ -9,7 +9,15 @@
     <!-- 自己畫 header -->
     <template v-slot:headers>
       <tr>
-        <th v-for="header in resolvedHeaders" :key="header.value" class="custom-header text-center">
+        <th
+          v-for="header in resolvedHeaders"
+          :key="header.value"
+          :class="[
+            'custom-header text-center',
+            header.value === 'employeeId' ? 'sticky-col left-col' : '',
+            header.value === 'name' ? 'sticky-col left-col-2' : '',
+          ]"
+        >
           {{ header.text }}
         </th>
       </tr>
@@ -18,11 +26,11 @@
     <!-- 自己畫每一行 -->
     <template v-slot:item="{ item }">
       <tr>
-        <td>{{ item.employeeId }}</td>
-        <td>{{ item.name }}</td>
+        <td class="sticky-col left-col">{{ item.employeeId }}</td>
+        <td class="sticky-col left-col-2">{{ item.name }}</td>
         <template v-for="header in dynamicHeaders" :key="header.value">
           <td>
-            <StatusCard :content="item[header.value]" @click="() => openDetail(item, header.value)"/>
+            <StatusCard :content="item[header.value]?.status || '-'" @click="() => openDetail(item, header.value)"/>
           </td>
         </template>
       </tr>
@@ -31,29 +39,52 @@
   <v-dialog
       v-model="showDetail"
       persistent
-      width="400"
+      width="600"
       >
       <v-card>
-          <v-card-title>
+        <v-card-title class="text-h6 font-weight-bold text-center">
           Attendance Detail
-          </v-card-title>
+        </v-card-title>
 
-          <v-card-text>
-          <div><strong>Date:</strong> {{ detailData.date }}</div>
-          <div><strong>Employee ID:</strong> {{ detailData.employeeId }}</div>
-          <div><strong>Name:</strong> {{ detailData.name }}</div>
-          <div><strong>Attendance Status:</strong> {{ detailData.status }}</div>
-          <div><strong>Clock-in Time:</strong> {{ detailData.clockInTime }}</div>
-          <div><strong>Clock-in Gate:</strong> {{ detailData.clockInGate }}</div>
-          <div><strong>Clock-out Time:</strong> {{ detailData.clockOutTime }}</div>
-          <div><strong>Clock-out Gate:</strong> {{ detailData.clockOutGate }}</div>
-          <div><strong>Duration:</strong> {{ detailData.duration }}</div>
-          </v-card-text>
+        <v-divider></v-divider>
 
-          <v-card-actions>
-          <v-btn color="primary" block @click="showDetail = false">Close</v-btn>
-          </v-card-actions>
+        <v-card-text>
+          <v-row dense>
+            <v-col cols="6" class="mb-2">
+              <strong>Date:</strong><br />{{ detailData.date }}
+            </v-col>
+            <v-col cols="6" class="mb-2">
+              <strong>Employee ID:</strong><br />{{ detailData.employeeId }}
+            </v-col>
+
+            <v-col cols="6" class="mb-2">
+              <strong>Name:</strong><br />{{ detailData.name }}
+            </v-col>
+            <v-col cols="6" class="mb-2">
+              <strong>Status:</strong><br />{{ detailData.status }}
+            </v-col>
+
+            <v-col cols="6" class="mb-2">
+              <strong>Clock-in Time:</strong><br />{{ detailData.clockInTime }}
+            </v-col>
+            <v-col cols="6" class="mb-2">
+              <strong>Clock-in Gate:</strong><br />{{ detailData.clockInGate }}
+            </v-col>
+
+            <v-col cols="6" class="mb-2">
+              <strong>Clock-out Time:</strong><br />{{ detailData.clockOutTime }}
+            </v-col>
+            <v-col cols="6" class="mb-2">
+              <strong>Clock-out Gate:</strong><br />{{ detailData.clockOutGate }}
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions class="pt-0">
+          <v-btn color="black" variant="tonal" class="ma-auto px-4" @click="showDetail = false">Close</v-btn>
+        </v-card-actions>
       </v-card>
+
   </v-dialog>
 </template>
 
@@ -88,23 +119,22 @@ export default {
       clockInGate: '',
       clockOutTime: '',
       clockOutGate: '',
-      duration: '',
     });
 
     // 這個是點擊 StatusCard 時要呼叫的
     function openDetail(item, dateKey) {
+      const detail = item[dateKey];
       detailData.value = {
         date: dateKey,
         employeeId: item.employeeId,
         name: item.name,
-        status: item[dateKey],
-        clockInTime: '08:25:33',  // 先給假資料
-        clockInGate: 'Main Gate',
-        clockOutTime: '17:02:55',
-        clockOutGate: 'Gate 11',
-        duration: '8 hr(s) 38 min(s)',
+        status: detail?.status || "-",
+        clockInTime: detail?.clockInTime || "-",
+        clockInGate: detail?.clockInGate || "-",
+        clockOutTime: detail?.clockOutTime || "-",
+        clockOutGate: detail?.clockOutGate || "-",
       };
-      showDetail.value = true; // 打開Dialog
+      showDetail.value = true;
     }
 
     return {
@@ -135,5 +165,22 @@ export default {
   color: black;
   font-weight: bold;
   text-align: center;
+}
+.sticky-col {
+  position: sticky;
+  background-color: rgb(255, 255, 255);
+  z-index: 2;
+}
+
+.left-col {
+  left: 0;
+  min-width: 120px;
+}
+
+.left-col-2 {
+  left: 120px;
+  min-width: 160px;
+  border-right: 1px solid #ccc;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
 }
 </style>

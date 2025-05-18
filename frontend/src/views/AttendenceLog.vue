@@ -21,7 +21,7 @@
             ></v-select>
           </v-col>
         </v-row>
-        <v-row align="center" class="text-center">
+        <v-row align="center" class="text-center mb-2">
           <v-col cols="auto">
             <h3 class="ma-0">Date</h3>
           </v-col>
@@ -34,9 +34,34 @@
               @update:modelValue="updateData"
             />
           </v-col>
+          <v-col cols="12" sm="6" md="4">
+            <v-radio-group
+              v-model="selectedRangeType"
+              row
+              hide-details
+              class="d-flex align-center ga-2"
+              @change="updateData"
+            >
+              <v-radio label="Week" value="week" />
+              <v-radio label="Month" value="month" />
+            </v-radio-group>
+          </v-col>
         </v-row>
         <!-- 出勤表格 -->
         <StatusTable :headers="headers" :items="items" />
+
+        <v-row justify="center" class="mt-4">
+          <v-col cols="auto">
+            <v-btn color="black" variant="tonal" @click="exportCSV">
+              Export CSV
+            </v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn color="black" variant="tonal" @click="exportPDF">
+              Export PDF
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-container>
     </SideBar>
   </v-app>
@@ -44,90 +69,62 @@
 
 <script setup>
 import axios from "axios";
-import { addDays, format } from "date-fns";
+import { endOfWeek, format, startOfWeek } from "date-fns";
 import { onMounted, ref } from "vue";
 
 import StatusTable from "@/components/StatusTable.vue";
 import SideBar from "../components/SideBar.vue";
-// import api from "@/api"; // 如果登入 API 暫時沒用到可以先註解
+
+const organizations = [
+    {name: "CEO", organization_id: "L1"},
+    {name: "COO", organization_id: "L10"},
+    {name: "HR Manager", organization_id: "L100"},
+    {name: "Operations Manager", organization_id: "L101"},
+    {name: "CFO", organization_id: "L11"},
+    {name: "Accounting Team", organization_id: "L110"},
+    {name: "Finance Team", organization_id: "L111"},
+    {name: "CTO", organization_id: "L12"},
+    {name: "Engineering Team", organization_id: "L120"},
+    {name: "IT Support", organization_id: "L121"},
+];
 
 const headers = ref([
   { text: "Employee ID", value: "employeeId" },
   { text: "Name", value: "name" },
 ]);
 
-// 假設這是登入後保存在 localStorage 的使用者資訊
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InFsbG95ZEBleGFtcGxlLmNvbSIsImV4cCI6MTc0NzcxOTA0OCwidXNlcl9pZCI6IjU2ZWEyNDc1LWM2N2ItNDVjYy1iNzI4LWI1YTE3OGYzNjEwMSJ9.cFjyrEH6JyIFHlMGu4RxJDszPbd0I9SY-9qcFhTEx0U"; // <-- 放你的完整 JWT token
-const userID = "56ea2475-c67b-45cc-b728-b5a178f36101"; // <-- 放登入回傳的 EmployeeID
-
+const token = localStorage.getItem("jwt") || "";
+const userID = localStorage.getItem("userID") || "";
 const departments = ref([]);
 const selectedDepartment = ref("");
 const items = ref([]);
 const selectedDate = ref("");
-
-const statusOptions = [
-  "On Time",
-  "Late",
-  "Leave Early",
-  "Absent",
-  "Abnormal",
-  "Day Off",
-];
-
-const employeeList = [
-  { employeeId: "B11705043", name: "Sophie Ku", department: "HR" },
-  { employeeId: "B11705044", name: "Lilian Liu", department: "HR" },
-  { employeeId: "B11705045", name: "Jerry Wu", department: "Engineering" },
-  { employeeId: "B11705046", name: "Hugo Wang", department: "Engineering" },
-  { employeeId: "B11705047", name: "Alice Chen", department: "Sales" },
-  { employeeId: "B11705048", name: "Kevin Lin", department: "Sales" },
-  { employeeId: "B11705049", name: "Emma Wong", department: "Marketing" },
-  { employeeId: "B11705050", name: "Michael Lee", department: "Marketing" },
-  { employeeId: "B11705051", name: "Nancy Huang", department: "Marketing" },
-];
-
-function randomStatus() {
-  const index = Math.floor(Math.random() * statusOptions.length);
-  return statusOptions[index];
-}
+const selectedRangeType = ref("week");
 
 function generateHeaders(baseDate) {
   headers.value = [
     { text: "Employee ID", value: "employeeId" },
     { text: "Name", value: "name" },
   ];
-  for (let i = 0; i < 7; i++) {
-    const date = addDays(baseDate, i);
-    const formattedText = format(date, "MM/dd (EEE)");
-    const dateKey = format(date, "MM/dd");
 
-    headers.value.push({
-      text: formattedText,
-      value: dateKey,
-    });
-  }
-}
+  let startDate, endDate;
 
-function generateItems(baseDate) {
-  console.log("現在選擇的部門是:", selectedDepartment.value);
-  let filteredEmployees = employeeList;
-  if (selectedDepartment.value) {
-    filteredEmployees = employeeList.filter(
-      (employee) => employee.department === selectedDepartment.value
-    );
+  if (selectedRangeType.value === "week") {
+    startDate = startOfWeek(baseDate, { weekStartsOn: 1 });
+    endDate = endOfWeek(baseDate, { weekStartsOn: 1 });
+  } else {
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    startDate = new Date(year, month, 1);
+    endDate = new Date(year, month + 1, 0);
   }
-  items.value = filteredEmployees.map((employee) => {
-    const record = {
-      employeeId: employee.employeeId,
-      name: employee.name,
-    };
-    for (let i = 0; i < 7; i++) {
-      const date = addDays(baseDate, i);
-      const dateKey = format(date, "MM/dd");
-      record[dateKey] = randomStatus();
-    }
-    return record;
-  });
+
+  let current = new Date(startDate);
+  while (current <= endDate) {
+    const display = format(current, "MM/dd (EEE)");
+    headers.value.push({ text: display, value: display });
+    current.setDate(current.getDate() + 1);
+  }
 }
 
 async function fetchDepartments() {
@@ -143,27 +140,131 @@ async function fetchDepartments() {
     const data = response.data;
 
     departments.value = [
-      { text: "All", value: "" },
-      ...data.map((dep) => ({ text: dep, value: dep })),
+      { text: "All", value: "" }, // 顯示用 All
+      ...data.map((depName) => {
+        const found = organizations.find((org) => org.name === depName);
+        return found
+          ? { text: found.name, value: found.organization_id }
+          : { text: depName, value: depName }; // fallback in case not matched
+      }),
     ];
   } catch (error) {
     console.error("無法取得部門資料", error);
   }
 }
 
-function updateData() {
-  if (!selectedDate.value) return;
-  const baseDate = new Date(selectedDate.value);
-  generateHeaders(baseDate);
-  generateItems(baseDate);
+async function fetchAttendanceData() {
+  if (!selectedDepartment.value) {
+    console.warn("請先選擇部門");
+    return;
+  }
+
+  const { fromDate, toDate } = getExportRange();
+
+  try {
+    const response = await axios.get(
+      `/api/report/attendanceSummary`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          department: selectedDepartment.value,
+          fromDate,
+          toDate,
+        },
+      }
+    );
+
+    const data = response.data;
+    const grouped = {};
+
+    data.forEach((item) => {
+      const dateKey = format(new Date(item.date), "MM/dd (EEE)");
+      if (!grouped[item.employeeID]) {
+        grouped[item.employeeID] = {
+          employeeId: item.employeeID,
+          name: item.name,
+        };
+      }
+      grouped[item.employeeID][dateKey] = {
+        status: item.status,
+        clockInTime: item.ClockInTime,
+        clockInGate: item.ClockInGate,
+        clockOutTime: item.ClockOutTime,
+        clockOutGate: item.ClockOutGate,
+      };
+    });
+
+    items.value = Object.values(grouped);
+  } catch (error) {
+    console.error("❌ 無法取得出勤資料", error.response?.data || error.message);
+  }
 }
 
-onMounted(() => {
-  const today = new Date();
-  selectedDate.value = format(today, "yyyy-MM-dd");
-  selectedDepartment.value = "";
-  generateHeaders(today);
-  generateItems(today);
-  fetchDepartments();
-});
+  function getExportRange() {
+    const baseDate = new Date(selectedDate.value);
+    if (selectedRangeType.value === "week") {
+      const fromDate = format(startOfWeek(baseDate, { weekStartsOn: 1 }), "yyyy-MM-dd");
+      const toDate = format(endOfWeek(baseDate, { weekStartsOn: 1 }), "yyyy-MM-dd");
+      return { fromDate, toDate };
+    } else {
+      const year = baseDate.getFullYear();
+      const month = baseDate.getMonth();
+      const fromDate = format(new Date(year, month, 1), "yyyy-MM-dd");
+      const toDate = format(new Date(year, month + 1, 0), "yyyy-MM-dd"); // 最後一天
+      return { fromDate, toDate };
+    }
+  }
+
+  function downloadFile(url, filename) {
+    axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      responseType: "blob",
+    })
+    .then((response) => {
+      const blob = new Blob([response.data]);
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    })
+    .catch((error) => {
+      console.error("❌ 匯出失敗", error.response?.data || error.message);
+    });
+  }
+
+  function exportCSV() {
+    if (!selectedDepartment.value || !selectedDate.value) return;
+
+    const { fromDate, toDate } = getExportRange();
+    const url = `/api/report/attendanceExportCSV?department=${selectedDepartment.value}&fromDate=${fromDate}&toDate=${toDate}`;
+    downloadFile(url, `Attendance_${fromDate}_${toDate}.csv`);
+  }
+
+  function exportPDF() {
+    if (!selectedDepartment.value || !selectedDate.value) return;
+
+    const { fromDate, toDate } = getExportRange();
+    const url = `/api/report/attendanceExportPDF?department=${selectedDepartment.value}&fromDate=${fromDate}&toDate=${toDate}`;
+    downloadFile(url, `Attendance_${fromDate}_${toDate}.pdf`);
+  }
+
+  function updateData() {
+    if (!selectedDate.value) return;
+    const baseDate = new Date(selectedDate.value);
+    generateHeaders(baseDate);
+    fetchAttendanceData();
+  }
+
+  onMounted(() => {
+    const today = new Date();
+    selectedDate.value = format(today, "yyyy-MM-dd");
+    selectedDepartment.value = "";
+    generateHeaders(today);
+    fetchDepartments();
+  });
 </script>
