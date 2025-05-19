@@ -59,13 +59,14 @@ export default {
 .displayAll {
   display: inline-block; /* 讓 <div> 受 text-align 影響 */
   text-align: center;
-  width: 100px;
+  width: 150px;
   height: 100px;
-  padding: 10px;
+  padding: 4px;
 }
 .display {
   display: flex;
   align-items: end; /* 靠左對齊 */
+  justify-content: center;
   font-size: 30px; /* 修正：text-size 應為 font-size */
   margin: 1px; /* 修正：margine 應為 margin */
   width: 100%;

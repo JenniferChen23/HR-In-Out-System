@@ -12,6 +12,7 @@
                 v-model="selectedDepartment"
                 :items="departments"
               ></SelectBox>
+              <p>Selected Department: {{ organization_id }}</p>
             </v-card>
           </v-col>
         </v-row>
@@ -19,10 +20,14 @@
         <v-row>
           <v-col><h2>Over Time Summary</h2></v-col>
           <v-col cols="auto">
-            <v-btn variant="tonal" color="blue"> This Month </v-btn>
+            <v-btn variant="tonal" color="blue" @click="thisMonthSummary">
+              This Month
+            </v-btn>
           </v-col>
           <v-col cols="auto">
-            <v-btn variant="tonal" color="blue"> This Week </v-btn>
+            <v-btn variant="tonal" color="blue" @click="thisWeekSummary">
+              This Week
+            </v-btn>
           </v-col>
         </v-row>
         <v-row class="mb-6">
@@ -42,41 +47,37 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    v-for="item in summary"
-                    :key="item.name"
-                    class="text-center"
-                  >
+                  <tr class="text-center">
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="item.TotalWorkHours"
+                        :totalWorkHours="summaryData.TotalWorkHours"
                         :unit="'hr'"
-                        :timeUnit="'month'"
-                        :lastRecord="1968"
+                        :timeUnit="currentPeriod"
+                        :lastRecord="LastSummary.TotalWorkHours"
                       />
                     </td>
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="item.TotalOTHours"
+                        :totalWorkHours="summaryData.TotalOTHours"
                         :unit="'hr'"
-                        :timeUnit="'month'"
-                        :lastRecord="1968"
+                        :timeUnit="currentPeriod"
+                        :lastRecord="LastSummary.TotalOTHours"
                       />
                     </td>
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="item.OTHoursPerson"
+                        :totalWorkHours="summaryData.OTHoursPerson"
                         :unit="'hr'"
-                        :timeUnit="'month'"
-                        :lastRecord="12.3"
+                        :timeUnit="currentPeriod"
+                        :lastRecord="LastSummary.OTHoursPerson"
                       />
                     </td>
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="item.OTHeadcounts"
+                        :totalWorkHours="summaryData.OTHeadcounts"
                         :unit="'p'"
-                        :timeUnit="'month'"
-                        :lastRecord="9"
+                        :timeUnit="currentPeriod"
+                        :lastRecord="LastSummary.OTHeadcounts"
                       />
                     </td>
                   </tr>
@@ -154,7 +155,7 @@
               </template>
               <DataTable
                 :show-headers="headers2"
-                :items="testData"
+                :items="alertList"
                 :search="search"
               />
             </v-card>
@@ -166,7 +167,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import SideBar from "../components/SideBar.vue";
 import SelectBox from "../components/SelectBox.vue";
 import WorkSummaryCard from "../components/SummaryCard.vue";
@@ -174,29 +175,72 @@ import DataTable from "../components/DataTable.vue";
 import BarChart from "../components/BarChart.vue";
 import api from "@/api";
 
-const selectedDepartment = ref("");
-const Startdate = ref();
-const Enddate = ref();
+const selectedDepartment = ref();
+
 const startDatePicker = ref(null);
 const endDatePicker = ref(null);
 const granularity = ref("");
 
 const userID = localStorage.getItem("userID") || "";
 const departments = ref([]);
-//const items = ref([]);
 
-// const organizations = [
-//   { name: "CEO", organization_id: "L1" },
-//   { name: "COO", organization_id: "L10" },
-//   { name: "HR Manager", organization_id: "L100" },
-//   { name: "Operations Manager", organization_id: "L101" },
-//   { name: "CFO", organization_id: "L11" },
-//   { name: "Accounting Team", organization_id: "L110" },
-//   { name: "Finance Team", organization_id: "L111" },
-//   { name: "CTO", organization_id: "L12" },
-//   { name: "Engineering Team", organization_id: "L120" },
-//   { name: "IT Support", organization_id: "L121" },
-// ];
+const summaryData = ref([]);
+const LastSummary = ref([]);
+//const items = ref([]);
+const currentPeriod = ref("week"); // 'week' 或 'month'
+
+const Startdate = ref(new Date());
+const Enddate = ref(new Date());
+
+const formattedStartDate = computed(() => formatDateToYMD(Startdate.value));
+const formattedEndDate = computed(() => formatDateToYMD(Enddate.value));
+
+const alertList = ref([]);
+
+function formatDateToYMD(date) {
+  if (!(date instanceof Date)) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // 月份從 0 開始
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const organizations = [
+  { name: "CEO", organization_id: "L1" },
+  { name: "COO", organization_id: "L10" },
+  { name: "HR Manager", organization_id: "L100" },
+  { name: "Operations Manager", organization_id: "L101" },
+  { name: "CFO", organization_id: "L11" },
+  { name: "Accounting Team", organization_id: "L110" },
+  { name: "Finance Team", organization_id: "L111" },
+  { name: "CTO", organization_id: "L12" },
+  { name: "Engineering Team", organization_id: "L120" },
+  { name: "IT Support", organization_id: "L121" },
+];
+const organization_id = computed(() => {
+  const found = organizations.find(
+    (item) => item.name === selectedDepartment.value
+  );
+  return found?.organization_id ?? null;
+});
+
+watch(departments, (newList) => {
+  if (newList.length > 0 && !selectedDepartment.value) {
+    selectedDepartment.value = newList[0];
+  }
+});
+
+watch(selectedDepartment, () => {
+  if (currentPeriod.value === "week") {
+    thisWeekSummary();
+  } else if (currentPeriod.value === "month") {
+    thisMonthSummary();
+  }
+});
+
+watch([formattedStartDate, formattedEndDate], () => {
+  fetchAlertList();
+});
 
 async function fetchDepartments() {
   try {
@@ -205,6 +249,81 @@ async function fetchDepartments() {
     departments.value = response.data;
   } catch (error) {
     console.error("無法取得部門資料", error);
+  }
+}
+function round2(num) {
+  return Math.round(num * 100) / 100;
+}
+
+async function thisWeekSummary() {
+  currentPeriod.value = "week";
+
+  try {
+    const response = await api.get(
+      `/report/thisWeek/${organization_id.value}/${userID}`
+    );
+
+    summaryData.value = {
+      TotalWorkHours: round2(response.data[0].TotalWorkHours),
+      TotalOTHours: round2(response.data[0].TotalOTHours),
+      OTHoursPerson: round2(response.data[0].OTHoursPerson),
+      OTHeadcounts: round2(response.data[0].OTHeadcounts),
+    };
+
+    LastSummary.value = {
+      TotalWorkHours: round2(response.data[1].TotalWorkHours),
+      TotalOTHours: round2(response.data[1].TotalOTHours),
+      OTHoursPerson: round2(response.data[1].OTHoursPerson),
+      OTHeadcounts: round2(response.data[1].OTHeadcounts),
+    };
+  } catch (error) {
+    console.error("無法取得周總體資料", error);
+  }
+}
+async function thisMonthSummary() {
+  currentPeriod.value = "month";
+
+  try {
+    const response = await api.get(
+      `/report/thisMonth/${organization_id.value}/${userID}`
+    );
+
+    summaryData.value = {
+      TotalWorkHours: round2(response.data[0].TotalWorkHours),
+      TotalOTHours: round2(response.data[0].TotalOTHours),
+      OTHoursPerson: round2(response.data[0].OTHoursPerson),
+      OTHeadcounts: round2(response.data[0].OTHeadcounts),
+    };
+
+    LastSummary.value = {
+      TotalWorkHours: round2(response.data[1].TotalWorkHours),
+      TotalOTHours: round2(response.data[1].TotalOTHours),
+      OTHoursPerson: round2(response.data[1].OTHoursPerson),
+      OTHeadcounts: round2(response.data[1].OTHeadcounts),
+    };
+  } catch (error) {
+    console.error("無法取得周總體資料", error);
+  }
+}
+
+async function fetchAlertList() {
+  try {
+    // const deparementID = await api.get(`/report/myDepartments/${userID}`);
+    // deparement = deparementID.data;
+    const ans = await api.get(
+      `/report/AlertList/${formattedStartDate.value}/${formattedEndDate.value}/${userID}`
+    );
+    if (ans && Array.isArray(ans.data)) {
+      alertList.value = ans.data.map((item) => ({
+        EmployeeID: item.EmployeeID,
+        Name: item.Name,
+        OTCounts: round2(item.OTCounts),
+        OTHours: round2(item.OTHours),
+        status: item.status,
+      }));
+    }
+  } catch (error) {
+    console.error("取得今日紀錄錯誤", error);
   }
 }
 
@@ -223,45 +342,45 @@ const headers2 = [
   { text: "Status", value: "status" },
 ];
 
-const summary = [
-  {
-    TotalWorkHours: "5649",
-    TotalOTHours: "369",
-    OTHoursPerson: "12.3",
-    OTHeadcounts: "7",
-  },
-];
+// const summary = [
+//   {
+//     TotalWorkHours: "5649",
+//     TotalOTHours: "369",
+//     OTHoursPerson: "12.3",
+//     OTHeadcounts: "7",
+//   },
+// ];
 
-const testData = [
-  {
-    EmployeeID: "E001",
-    Name: "John Doe",
-    OTCounts: 5,
-    OTHours: 20,
-    status: "Warning",
-  },
-  {
-    EmployeeID: "E002",
-    Name: "Jane Smith",
-    OTCounts: 3,
-    OTHours: 15,
-    status: "Warning",
-  },
-  {
-    EmployeeID: "E003",
-    Name: "Mike Johnson",
-    OTCounts: 8,
-    OTHours: 32,
-    status: "Alert",
-  },
-  {
-    EmployeeID: "E004",
-    Name: "Sarah Lee",
-    OTCounts: 2,
-    OTHours: 10,
-    status: "Alert",
-  },
-];
+// const testData = [
+//   {
+//     EmployeeID: "E001",
+//     Name: "John Doe",
+//     OTCounts: 5,
+//     OTHours: 20,
+//     status: "Warning",
+//   },
+//   {
+//     EmployeeID: "E002",
+//     Name: "Jane Smith",
+//     OTCounts: 3,
+//     OTHours: 15,
+//     status: "Warning",
+//   },
+//   {
+//     EmployeeID: "E003",
+//     Name: "Mike Johnson",
+//     OTCounts: 8,
+//     OTHours: 32,
+//     status: "Alert",
+//   },
+//   {
+//     EmployeeID: "E004",
+//     Name: "Sarah Lee",
+//     OTCounts: 2,
+//     OTHours: 10,
+//     status: "Alert",
+//   },
+// ];
 
 const LabelData = ["2024-04/W4", "2024-04/W5", "2024-05/W1"];
 const data = [10, 5, 7];
@@ -269,8 +388,8 @@ const data = [10, 5, 7];
 onMounted(() => {
   // const today = new Date();
   // selectedDate.value = format(today, "yyyy-MM-dd");
-  selectedDepartment.value = "";
   fetchDepartments();
+  thisWeekSummary();
 });
 </script>
 <style>
