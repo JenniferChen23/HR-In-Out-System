@@ -12,23 +12,12 @@
                 v-model="selectedDepartment"
                 :items="departments"
               ></SelectBox>
-              <p>Selected Department: {{ organization_id }}</p>
             </v-card>
           </v-col>
         </v-row>
         <!-- 放總體出勤分析表 -->
         <v-row>
           <v-col><h2>Over Time Summary</h2></v-col>
-          <v-col cols="auto">
-            <v-btn variant="tonal" color="blue" @click="thisMonthSummary">
-              This Month
-            </v-btn>
-          </v-col>
-          <v-col cols="auto">
-            <v-btn variant="tonal" color="blue" @click="thisWeekSummary">
-              This Week
-            </v-btn>
-          </v-col>
         </v-row>
         <v-row class="mb-6">
           <v-col>
@@ -121,22 +110,30 @@
               class="d-flex align-center"
               v-model="granularity"
             >
-              <v-radio label="Day" value="day"></v-radio>
               <v-radio label="Week" value="week"></v-radio>
               <v-radio label="Month " value="month"></v-radio>
             </v-radio-group>
           </v-col>
+          <v-col cols="auto" class="d-flex align-center">
+            <v-select
+              v-model="selectedMetric"
+              :items="metrics"
+              item-title="text"
+              item-value="value"
+              label="Choose Metric"
+              class="mb-4"
+              dense
+              outlined
+              style="max-width: 200px"
+            />
+          </v-col>
         </v-row>
         <v-row class="mb-6">
           <bar-chart
-            :data="data"
-            :granularity="granularity"
-            :labels="LabelData"
-            :startDate="Startdate"
-            :endDate="Enddate"
-            title="OT-HeadCounts"
-        /></v-row>
-
+            :data="chartData"
+            :labels="chartLabels"
+            :title="selectedMetricText"
+          /></v-row>
         <v-row>
           <v-col><h2>Alert List</h2></v-col>
         </v-row>
@@ -167,43 +164,22 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from "vue";
-import SideBar from "../components/SideBar.vue";
-import SelectBox from "../components/SelectBox.vue";
-import WorkSummaryCard from "../components/SummaryCard.vue";
-import DataTable from "../components/DataTable.vue";
-import BarChart from "../components/BarChart.vue";
 import api from "@/api";
+import { computed, onMounted, ref, watch } from "vue";
+import BarChart from "../components/BarChart.vue";
+import DataTable from "../components/DataTable.vue";
+import SelectBox from "../components/SelectBox.vue";
+import SideBar from "../components/SideBar.vue";
+import WorkSummaryCard from "../components/SummaryCard.vue";
 
-const selectedDepartment = ref();
-
-const startDatePicker = ref(null);
-const endDatePicker = ref(null);
-const granularity = ref("");
-
+// 🟦 基本資料
 const userID = localStorage.getItem("userID") || "";
 const departments = ref([]);
-
-const summaryData = ref([]);
-const LastSummary = ref([]);
-//const items = ref([]);
-const currentPeriod = ref("week"); // 'week' 或 'month'
-
-const Startdate = ref(new Date());
-const Enddate = ref(new Date());
-
-const formattedStartDate = computed(() => formatDateToYMD(Startdate.value));
-const formattedEndDate = computed(() => formatDateToYMD(Enddate.value));
-
-const alertList = ref([]);
-
-function formatDateToYMD(date) {
-  if (!(date instanceof Date)) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0"); // 月份從 0 開始
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+const selectedDepartment = ref(null);
+const organization_id = computed(() => {
+  const found = organizations.find(d => d.name === selectedDepartment.value);
+  return found?.organization_id ?? null;
+});
 
 const organizations = [
   { name: "CEO", organization_id: "L1" },
@@ -217,116 +193,37 @@ const organizations = [
   { name: "Engineering Team", organization_id: "L120" },
   { name: "IT Support", organization_id: "L121" },
 ];
-const organization_id = computed(() => {
-  const found = organizations.find(
-    (item) => item.name === selectedDepartment.value
-  );
-  return found?.organization_id ?? null;
+
+// 🟦 Summary 與 Chart 相關
+const granularity = ref("week");
+const summaryData = ref({});
+const LastSummary = ref({});
+const selectedMetric = ref("TotalWorkHours");
+const chartData = ref([]);
+const chartLabels = ref([]);
+
+const metrics = [
+  { text: "Total Work Hours", value: "TotalWorkHours" },
+  { text: "Total OT Hours", value: "TotalOTHours" },
+  { text: "OT Hours / Person", value: "OTHoursPerson" },
+  { text: "OT Headcounts", value: "OTHeadcounts" },
+];
+const selectedMetricText = computed(() => {
+  const found = metrics.find(m => m.value === selectedMetric.value);
+  return found?.text || "";
 });
 
-watch(departments, (newList) => {
-  if (newList.length > 0 && !selectedDepartment.value) {
-    selectedDepartment.value = newList[0];
-  }
-});
+// 🟦 日期
+const Startdate = ref(new Date());
+const Enddate = ref(new Date());
+const formattedStartDate = computed(() => formatDateToYMD(Startdate.value));
+const formattedEndDate = computed(() => formatDateToYMD(Enddate.value));
 
-watch(selectedDepartment, () => {
-  if (currentPeriod.value === "week") {
-    thisWeekSummary();
-  } else if (currentPeriod.value === "month") {
-    thisMonthSummary();
-  }
-});
+// 🟦 Alert List
+const alertList = ref([]);
+const search = ref("");
 
-watch([formattedStartDate, formattedEndDate], () => {
-  fetchAlertList();
-});
-
-async function fetchDepartments() {
-  try {
-    const response = await api.get(`/report/inChargeDepartment/${userID}`);
-
-    departments.value = response.data;
-  } catch (error) {
-    console.error("無法取得部門資料", error);
-  }
-}
-function round2(num) {
-  return Math.round(num * 100) / 100;
-}
-
-async function thisWeekSummary() {
-  currentPeriod.value = "week";
-
-  try {
-    const response = await api.get(
-      `/report/thisWeek/${organization_id.value}/${userID}`
-    );
-
-    summaryData.value = {
-      TotalWorkHours: round2(response.data[0].TotalWorkHours),
-      TotalOTHours: round2(response.data[0].TotalOTHours),
-      OTHoursPerson: round2(response.data[0].OTHoursPerson),
-      OTHeadcounts: round2(response.data[0].OTHeadcounts),
-    };
-
-    LastSummary.value = {
-      TotalWorkHours: round2(response.data[1].TotalWorkHours),
-      TotalOTHours: round2(response.data[1].TotalOTHours),
-      OTHoursPerson: round2(response.data[1].OTHoursPerson),
-      OTHeadcounts: round2(response.data[1].OTHeadcounts),
-    };
-  } catch (error) {
-    console.error("無法取得周總體資料", error);
-  }
-}
-async function thisMonthSummary() {
-  currentPeriod.value = "month";
-
-  try {
-    const response = await api.get(
-      `/report/thisMonth/${organization_id.value}/${userID}`
-    );
-
-    summaryData.value = {
-      TotalWorkHours: round2(response.data[0].TotalWorkHours),
-      TotalOTHours: round2(response.data[0].TotalOTHours),
-      OTHoursPerson: round2(response.data[0].OTHoursPerson),
-      OTHeadcounts: round2(response.data[0].OTHeadcounts),
-    };
-
-    LastSummary.value = {
-      TotalWorkHours: round2(response.data[1].TotalWorkHours),
-      TotalOTHours: round2(response.data[1].TotalOTHours),
-      OTHoursPerson: round2(response.data[1].OTHoursPerson),
-      OTHeadcounts: round2(response.data[1].OTHeadcounts),
-    };
-  } catch (error) {
-    console.error("無法取得周總體資料", error);
-  }
-}
-
-async function fetchAlertList() {
-  try {
-    // const deparementID = await api.get(`/report/myDepartments/${userID}`);
-    // deparement = deparementID.data;
-    const ans = await api.get(
-      `/report/AlertList/${formattedStartDate.value}/${formattedEndDate.value}/${userID}`
-    );
-    if (ans && Array.isArray(ans.data)) {
-      alertList.value = ans.data.map((item) => ({
-        EmployeeID: item.EmployeeID,
-        Name: item.Name,
-        OTCounts: round2(item.OTCounts),
-        OTHours: round2(item.OTHours),
-        status: item.status,
-      }));
-    }
-  } catch (error) {
-    console.error("取得今日紀錄錯誤", error);
-  }
-}
-
+// 🟦 表格欄位
 const headers = [
   { text: "Total Work Hours", value: "TotalWorkHours" },
   { text: "Total OT Hours", value: "TotalOTHours" },
@@ -342,56 +239,101 @@ const headers2 = [
   { text: "Status", value: "status" },
 ];
 
-// const summary = [
-//   {
-//     TotalWorkHours: "5649",
-//     TotalOTHours: "369",
-//     OTHoursPerson: "12.3",
-//     OTHeadcounts: "7",
-//   },
-// ];
+// 🟦 函式
+function formatDateToYMD(date) {
+  if (!(date instanceof Date)) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
-// const testData = [
-//   {
-//     EmployeeID: "E001",
-//     Name: "John Doe",
-//     OTCounts: 5,
-//     OTHours: 20,
-//     status: "Warning",
-//   },
-//   {
-//     EmployeeID: "E002",
-//     Name: "Jane Smith",
-//     OTCounts: 3,
-//     OTHours: 15,
-//     status: "Warning",
-//   },
-//   {
-//     EmployeeID: "E003",
-//     Name: "Mike Johnson",
-//     OTCounts: 8,
-//     OTHours: 32,
-//     status: "Alert",
-//   },
-//   {
-//     EmployeeID: "E004",
-//     Name: "Sarah Lee",
-//     OTCounts: 2,
-//     OTHours: 10,
-//     status: "Alert",
-//   },
-// ];
+function round2(num) {
+  return Math.round(num * 100) / 100;
+}
 
-const LabelData = ["2024-04/W4", "2024-04/W5", "2024-05/W1"];
-const data = [10, 5, 7];
+function updateChart() {
+  const metric = selectedMetric.value;
+  chartData.value = [
+    round2(LastSummary.value?.[metric] || 0),
+    round2(summaryData.value?.[metric] || 0),
+  ];
+  chartLabels.value = granularity.value === "week" ? ["Last Week", "This Week"] : ["Last Month", "This Month"];
+}
 
+async function fetchSummary() {
+  if (!organization_id.value) return;
+
+  const endpoint = granularity.value === "week" ? "thisWeek" : "thisMonth";
+
+  try {
+    const res = await api.get(`/report/${endpoint}/${organization_id.value}/${userID}`);
+    summaryData.value = {
+      TotalWorkHours: round2(res.data[0].TotalWorkHours),
+      TotalOTHours: round2(res.data[0].TotalOTHours),
+      OTHoursPerson: round2(res.data[0].OTHoursPerson),
+      OTHeadcounts: round2(res.data[0].OTHeadcounts),
+    };
+    LastSummary.value = {
+      TotalWorkHours: round2(res.data[1].TotalWorkHours),
+      TotalOTHours: round2(res.data[1].TotalOTHours),
+      OTHoursPerson: round2(res.data[1].OTHoursPerson),
+      OTHeadcounts: round2(res.data[1].OTHeadcounts),
+    };
+    updateChart();
+  } catch (err) {
+    console.error("📛 summary API failed", err);
+  }
+}
+
+async function fetchAlertList() {
+  try {
+    const res = await api.get(`/report/AlertList/${formattedStartDate.value}/${formattedEndDate.value}/${userID}`);
+    if (res && Array.isArray(res.data)) {
+      alertList.value = res.data.map((item) => ({
+        EmployeeID: item.EmployeeID,
+        Name: item.Name,
+        OTCounts: round2(item.OTCounts),
+        OTHours: round2(item.OTHours),
+        status: item.status,
+      }));
+    }
+  } catch (err) {
+    console.error("📛 AlertList API failed", err);
+  }
+}
+
+async function fetchDepartments() {
+  try {
+    const res = await api.get(`/report/inChargeDepartment/${userID}`);
+    departments.value = res.data;
+    if (!selectedDepartment.value && res.data.length > 0) {
+      selectedDepartment.value = res.data[0]; // 預設選第一個
+    }
+  } catch (err) {
+    console.error("📛 Department API failed", err);
+  }
+}
+
+// 🟦 監聽
+watch([selectedDepartment, granularity], () => {
+  if (organization_id.value) fetchSummary();
+});
+
+watch([formattedStartDate, formattedEndDate], () => {
+  fetchAlertList();
+});
+
+watch(selectedMetric, () => {
+  updateChart(); // 切換欄位立即更新圖表
+});
+
+// 🟦 初始載入
 onMounted(() => {
-  // const today = new Date();
-  // selectedDate.value = format(today, "yyyy-MM-dd");
   fetchDepartments();
-  thisWeekSummary();
 });
 </script>
+
 <style>
 .v-table .text-center td {
   justify-content: center;
