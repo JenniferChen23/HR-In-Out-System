@@ -28,10 +28,7 @@ export default {
       type: Array,
       required: true,
     },
-    search: {
-      type: String,
-      default: "",
-    },
+    showHeaders: { type: Boolean, default: true },
   },
 };
 </script>

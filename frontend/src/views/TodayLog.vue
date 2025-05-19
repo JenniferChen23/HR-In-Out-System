@@ -20,7 +20,11 @@
             </thead>
 
             <tbody>
-              <tr v-for="item in records" :key="item.name" class="text-center">
+              <tr
+                v-for="item in todayRecord"
+                :key="item.name"
+                class="text-center"
+              >
                 <td>{{ item.date }}</td>
                 <td>{{ item.name }}</td>
                 <td>{{ item.ClockInTime }}</td>
@@ -61,17 +65,17 @@
                 />
               </v-card>
             </v-col>
+            <v-btn prepend-icon="mdi-magnify" @click="fetchPeriodTime">
+              Search
+            </v-btn>
+            {{ formattedStartDate }} {{ formattedEndDate }}
           </v-row>
           <!-- 使用 DataTable 組件，並傳遞資料 -->
-          <DataTable
-            :show-headers="headers.text"
-            :items="historyRecords"
-            :search="search"
-          />
+          <DataTable :show-headers="headers" :items="records" />
         </v-card>
         <div class="export">
-          <ExportButton> Export as CSV </ExportButton>
-          <ExportButton> Export as PDF </ExportButton>
+          <ExportButton @click="exportAsCSV"> Export as CSV </ExportButton>
+          <ExportButton @click="exportAsPDF"> Export as PDF </ExportButton>
         </div>
       </v-container>
     </SideBar>
@@ -79,16 +83,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import DataTable from "../components/DataTable.vue";
 import SideBar from "../components/SideBar.vue";
 import StatusCard from "../components/StatusCard.vue";
 import ExportButton from "../components/ExportButton.vue";
 import api from "@/api";
 
+const todayRecord = ref([]);
 const records = ref([]);
-let userID = 13;
-const search = ref("");
+
+const userID = localStorage.getItem("userID");
+let deparement = "";
+
+const Startdate = ref(new Date());
+const Enddate = ref(new Date());
+
+const formattedStartDate = computed(() => formatDateToYMD(Startdate.value));
+const formattedEndDate = computed(() => formatDateToYMD(Enddate.value));
 
 const headers = [
   { text: "Date", value: "date" },
@@ -101,12 +113,14 @@ const headers = [
   // { text: "Duration", value: "Duration" }, //後端沒寫所以先不放
 ];
 
+console.log("fetchHistoryRecords id:", userID);
+
 async function fetchTodayRecords() {
   try {
     const response = await api.get(`/report/myRecords/${userID}`);
     if (response && response.data) {
       // 包成陣列並轉成 template 用的 key
-      records.value = [
+      todayRecord.value = [
         {
           date: response.data.date,
           name: response.data.name,
@@ -123,60 +137,107 @@ async function fetchTodayRecords() {
   }
 }
 
-const historyRecords = [
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    ClockInTime: "09:00",
-    ClockOutTime: "17:00",
-    ClockInGate: "Gate A",
-    ClockOutGate: "Gate B",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "Late",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    checkInTime: "08:45",
-    checkOutTime: "17:05",
-    checkInGate: "Gate B",
-    checkOutGate: "Gate C",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "On Time",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    ClockInTime: "09:20",
-    ClockOutTime: "16:55",
-    ClockInGate: "Gate A",
-    ClockOutGate: "Gate A",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "Late",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    checkInTime: "08:30",
-    checkOutTime: "17:15",
-    checkInGate: "Gate C",
-    checkOutGate: "Gate B",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "On Time",
-  },
-  {
-    date: "2025-04-25",
-    name: "John Doe",
-    ClockInTime: "09:10",
-    ClockOutTime: "16:40",
-    ClockInGate: "Gate B",
-    ClockOutGate: "Gate C",
-    Duration: "8 hr(s) 38 min(s)",
-    status: "Abnormal",
-  },
-];
+async function fetchHistoryRecords() {
+  try {
+    const response = await api.get(`/report/historyRecords/${userID}`);
+    if (response && Array.isArray(response.data)) {
+      records.value = response.data.map((item) => ({
+        date: item.date,
+        name: item.name,
+        ClockInTime: item.clock_in_time,
+        ClockOutTime: item.clock_out_time,
+        ClockInGate: item.clock_in_gate,
+        ClockOutGate: item.clock_out_gate,
+        status: item.status,
+      }));
+    }
+  } catch (error) {
+    console.error("取得今日紀錄錯誤", error);
+  }
+}
+
+async function fetchPeriodTime() {
+  try {
+    // const deparementID = await api.get(`/report/myDepartments/${userID}`);
+    // deparement = deparementID.data;
+    const response = await api.get(
+      `/report/historyRecords/${userID}/${formattedStartDate.value}/${formattedEndDate.value}`
+    );
+    if (response && Array.isArray(response.data)) {
+      records.value = response.data.map((item) => ({
+        date: item.date,
+        name: item.name,
+        ClockInTime: item.clock_in_time,
+        ClockOutTime: item.clock_out_time,
+        ClockInGate: item.clock_in_gate,
+        ClockOutGate: item.clock_out_gate,
+        status: item.status,
+      }));
+    }
+  } catch (error) {
+    console.error("取得今日紀錄錯誤", error);
+  }
+}
+
+function downloadFile(url, filename) {
+  api
+    .get(url, {
+      responseType: "blob", // 👈 關鍵在這行
+    })
+    .then((response) => {
+      const blob = new Blob([response.data]);
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    })
+    .catch((error) => {
+      console.error("❌ 匯出失敗", error.response?.data || error.message);
+    });
+}
+
+async function fecthDepartment() {
+  const deparementID = await api.get(`/report/myDepartments/${userID}`);
+  deparement = deparementID.data;
+}
+
+function exportAsCSV() {
+  if (!formattedStartDate.value || !formattedEndDate.value) return;
+
+  const url = `/report/summaryExportCSV/${deparement}/${formattedStartDate.value}/${formattedEndDate.value}/${userID}`;
+  downloadFile(
+    url,
+    `Summary_${formattedStartDate.value}_${formattedEndDate.value}.csv`
+  );
+}
+
+function exportAsPDF() {
+  if (!formattedStartDate.value || !formattedEndDate.value) return;
+
+  const url = `/report/summaryExportPDF/${deparement}/${formattedStartDate.value}/${formattedEndDate.value}/${userID}`;
+  downloadFile(
+    url,
+    `Summary_${formattedStartDate.value}_${formattedEndDate.value}.pdf`
+  );
+}
+
+function formatDateToYMD(date) {
+  if (!(date instanceof Date)) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // 月份從 0 開始
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 onMounted(() => {
+  const userID = localStorage.getItem("userID");
+  console.log("抓到的 userID:", userID);
+  const jwt = localStorage.getItem("jwt");
+  console.log("抓到的 token:", jwt);
   fetchTodayRecords();
+  fetchHistoryRecords();
+  fecthDepartment();
 });
 </script>
 

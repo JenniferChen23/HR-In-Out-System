@@ -41,7 +41,7 @@ const router = useRouter();
 
 async function login() {
   try {
-    const response = await api.post("/api/auth/login", {
+    const response = await api.post("/auth/login", {
       email: email.value, // 用變數帶入
       password: password.value, // 用變數帶入
     });
@@ -53,7 +53,7 @@ async function login() {
     console.log(user); // { id: 1, email: "...", name: "John Doe" }
 
     localStorage.setItem("jwt", token);
-    localStorage.setItem("userID", user.id);
+    localStorage.setItem("userID", user.EmployeeID);
     router.push("/today");
   } catch (err) {
     console.error("Login failed:", err.response?.data || err.message);

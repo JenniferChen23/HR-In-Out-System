@@ -10,7 +10,7 @@
             <v-card flat width="30%">
               <SelectBox
                 v-model="selectedDepartment"
-                :items="Department"
+                :items="departments"
               ></SelectBox>
             </v-card>
           </v-col>
@@ -165,115 +165,114 @@
   </v-app>
 </template>
 
-<script>
+<script setup>
+import { onMounted, ref } from "vue";
 import SideBar from "../components/SideBar.vue";
 import SelectBox from "../components/SelectBox.vue";
 import WorkSummaryCard from "../components/SummaryCard.vue";
 import DataTable from "../components/DataTable.vue";
-import { ref } from "vue";
-
 import BarChart from "../components/BarChart.vue";
+import api from "@/api";
 
-export default {
-  name: "MyTeam",
-  components: {
-    SideBar,
-    WorkSummaryCard,
-    DataTable,
-    SelectBox,
-    BarChart,
+const selectedDepartment = ref("");
+const Startdate = ref();
+const Enddate = ref();
+const startDatePicker = ref(null);
+const endDatePicker = ref(null);
+const granularity = ref("");
+
+const userID = localStorage.getItem("userID") || "";
+const departments = ref([]);
+//const items = ref([]);
+
+// const organizations = [
+//   { name: "CEO", organization_id: "L1" },
+//   { name: "COO", organization_id: "L10" },
+//   { name: "HR Manager", organization_id: "L100" },
+//   { name: "Operations Manager", organization_id: "L101" },
+//   { name: "CFO", organization_id: "L11" },
+//   { name: "Accounting Team", organization_id: "L110" },
+//   { name: "Finance Team", organization_id: "L111" },
+//   { name: "CTO", organization_id: "L12" },
+//   { name: "Engineering Team", organization_id: "L120" },
+//   { name: "IT Support", organization_id: "L121" },
+// ];
+
+async function fetchDepartments() {
+  try {
+    const response = await api.get(`/report/inChargeDepartment/${userID}`);
+
+    departments.value = response.data;
+  } catch (error) {
+    console.error("無法取得部門資料", error);
+  }
+}
+
+const headers = [
+  { text: "Total Work Hours", value: "TotalWorkHours" },
+  { text: "Total OT Hours", value: "TotalOTHours" },
+  { text: "OT Hours/ person", value: "OTHoursPerson" },
+  { text: "OT-HeadCounts", value: "OTHeadcounts" },
+];
+
+const headers2 = [
+  { text: "Employee ID", value: "EmployeeID" },
+  { text: "Name", value: "Name" },
+  { text: "OT Counts", value: "OTCounts" },
+  { text: "OT Hours", value: "OTHours" },
+  { text: "Status", value: "status" },
+];
+
+const summary = [
+  {
+    TotalWorkHours: "5649",
+    TotalOTHours: "369",
+    OTHoursPerson: "12.3",
+    OTHeadcounts: "7",
   },
-  setup() {
-    const selectedDepartment = ref("All");
-    const Startdate = ref();
-    const Enddate = ref();
-    const startDatePicker = ref(null);
-    const endDatePicker = ref(null);
-    const granularity = ref("");
+];
 
-    const headers = [
-      { text: "Total Work Hours", value: "TotalWorkHours" },
-      { text: "Total OT Hours", value: "TotalOTHours" },
-      { text: "OT Hours/ person", value: "OTHoursPerson" },
-      { text: "OT-HeadCounts", value: "OTHeadcounts" },
-    ];
-    const headers2 = [
-      { text: "Employee ID", value: "EmployeeID" },
-      { text: "Name", value: "Name" },
-      { text: "OT Counts", value: "OTCounts" },
-      { text: "OT Hours", value: "OTHours" },
-      { text: "Status", value: "status" },
-    ];
-    const Department = [
-      "All",
-      "Sales",
-      "Marketing",
-      "Human Resources",
-      "Engineering",
-      "Customer Support",
-      "Finance",
-    ];
-    const summary = [
-      {
-        TotalWorkHours: "5649",
-        TotalOTHours: "369",
-        OTHoursPerson: "12.3",
-        OTHeadcounts: "7",
-      },
-    ];
-    const testData = [
-      {
-        EmployeeID: "E001",
-        Name: "John Doe",
-        OTCounts: 5,
-        OTHours: 20,
-        status: "Warning",
-      },
-      {
-        EmployeeID: "E002",
-        Name: "Jane Smith",
-        OTCounts: 3,
-        OTHours: 15,
-        status: "Warning",
-      },
-      {
-        EmployeeID: "E003",
-        Name: "Mike Johnson",
-        OTCounts: 8,
-        OTHours: 32,
-        status: "Alert",
-      },
-      {
-        EmployeeID: "E004",
-        Name: "Sarah Lee",
-        OTCounts: 2,
-        OTHours: 10,
-        status: "Alert",
-      },
-    ];
-
-    const LabelData = ["2024-04/W4", "2024-04/W5", "2024-05/W1"];
-    const data = [10, 5, 7];
-
-    return {
-      selectedDepartment,
-      Department,
-      headers,
-      headers2,
-      summary,
-      testData,
-      Startdate,
-      Enddate,
-      startDatePicker,
-      endDatePicker,
-      LabelData,
-      granularity,
-      data,
-    };
+const testData = [
+  {
+    EmployeeID: "E001",
+    Name: "John Doe",
+    OTCounts: 5,
+    OTHours: 20,
+    status: "Warning",
   },
-};
+  {
+    EmployeeID: "E002",
+    Name: "Jane Smith",
+    OTCounts: 3,
+    OTHours: 15,
+    status: "Warning",
+  },
+  {
+    EmployeeID: "E003",
+    Name: "Mike Johnson",
+    OTCounts: 8,
+    OTHours: 32,
+    status: "Alert",
+  },
+  {
+    EmployeeID: "E004",
+    Name: "Sarah Lee",
+    OTCounts: 2,
+    OTHours: 10,
+    status: "Alert",
+  },
+];
+
+const LabelData = ["2024-04/W4", "2024-04/W5", "2024-05/W1"];
+const data = [10, 5, 7];
+
+onMounted(() => {
+  // const today = new Date();
+  // selectedDate.value = format(today, "yyyy-MM-dd");
+  selectedDepartment.value = "";
+  fetchDepartments();
+});
 </script>
-
 <style>
 .v-table .text-center td {
   justify-content: center;

@@ -4,6 +4,7 @@
     variant="tonal"
     color="black"
     style="margin: 10px"
+    v-if="content"
     flat
   >
     <v-card-text
@@ -21,6 +22,7 @@ const props = defineProps({
   content: {
     type: String,
     required: true,
+    default: "",
   },
 });
 

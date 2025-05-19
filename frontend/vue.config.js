@@ -7,7 +7,6 @@ module.exports = defineConfig({
       // https://github.com/vuetifyjs/vuetify-loader/tree/next/packages/vuetify-loader
     },
   },
-  devServer: {
-    port: 8000,
-  },
 });
+
+console.log("👉 vue.config.js loaded with proxy config");
