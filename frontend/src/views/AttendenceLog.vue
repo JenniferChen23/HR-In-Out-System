@@ -129,7 +129,7 @@ async function fetchDepartments() {
     const data = response.data;
 
     departments.value = [
-      { text: "All", value: "" },
+      { text: "-", value: "" },
       ...data.map((depName) => {
         const found = organizations.find((org) => org.name === depName);
         return found

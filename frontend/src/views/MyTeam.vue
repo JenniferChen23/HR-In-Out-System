@@ -15,7 +15,6 @@
             </v-card>
           </v-col>
         </v-row>
-        <!-- 放總體出勤分析表 -->
         <v-row>
           <v-col><h2>Over Time Summary</h2></v-col>
         </v-row>
@@ -39,34 +38,34 @@
                   <tr class="text-center">
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="summaryData.TotalWorkHours"
+                        :totalWorkHours="summaryData1.TotalWorkHours"
                         :unit="'hr'"
                         :timeUnit="currentPeriod"
-                        :lastRecord="LastSummary.TotalWorkHours"
+                        :lastRecord="summaryData2.TotalWorkHours"
                       />
                     </td>
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="summaryData.TotalOTHours"
+                        :totalWorkHours="summaryData1.TotalOTHours"
                         :unit="'hr'"
                         :timeUnit="currentPeriod"
-                        :lastRecord="LastSummary.TotalOTHours"
+                        :lastRecord="summaryData2.TotalOTHours"
                       />
                     </td>
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="summaryData.OTHoursPerson"
+                        :totalWorkHours="summaryData1.OTHoursPerson"
                         :unit="'hr'"
                         :timeUnit="currentPeriod"
-                        :lastRecord="LastSummary.OTHoursPerson"
+                        :lastRecord="summaryData2.OTHoursPerson"
                       />
                     </td>
                     <td>
                       <WorkSummaryCard
-                        :totalWorkHours="summaryData.OTHeadcounts"
+                        :totalWorkHours="summaryData1.OTHeadcounts"
                         :unit="'p'"
                         :timeUnit="currentPeriod"
-                        :lastRecord="LastSummary.OTHeadcounts"
+                        :lastRecord="summaryData2.OTHeadcounts"
                       />
                     </td>
                   </tr>
@@ -75,7 +74,6 @@
             </v-card>
           </v-col>
         </v-row>
-        <!-- 長條圖 -->
         <v-row>
           <v-col><h2>Analysis Chart</h2></v-col>
         </v-row>
@@ -194,8 +192,11 @@ const organizations = [
 ];
 
 const granularity = ref("week");
-const summaryData = ref({});
-const LastSummary = ref({});
+const summaryData1 = ref({});
+const summaryData2 = ref({});
+const summaryData3 = ref({});
+const summaryData4 = ref({});
+const summaryData5 = ref({});
 const selectedMetric = ref("TotalWorkHours");
 const chartData = ref([]);
 const chartLabels = ref([]);
@@ -248,10 +249,46 @@ function round2(num) {
 function updateChart() {
   const metric = selectedMetric.value;
   chartData.value = [
-    round2(LastSummary.value?.[metric] || 0),
-    round2(summaryData.value?.[metric] || 0),
+    round2(summaryData5.value?.[metric] || 0),
+    round2(summaryData4.value?.[metric] || 0),
+    round2(summaryData3.value?.[metric] || 0),
+    round2(summaryData2.value?.[metric] || 0),
+    round2(summaryData1.value?.[metric] || 0),
   ];
-  chartLabels.value = granularity.value === "week" ? ["Last Week", "This Week"] : ["Last Month", "This Month"];
+  chartLabels.value = granularity.value === "week" ? generateWeekLabels(5):generateMonthLabels(5);
+}
+
+function generateWeekLabels(weeks = 5) {
+  const labels = [];
+  const today = new Date();
+  const currentMonday = new Date(today);
+  currentMonday.setDate(today.getDate() - today.getDay() + 1); 
+
+  for (let i = weeks - 1; i >= 0; i--) {
+    const start = new Date(currentMonday);
+    start.setDate(currentMonday.getDate() - i * 7);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    labels.push(`${formatDateToYMD(start)} ~ ${formatDateToYMD(end)}`);
+  }
+
+  return labels;
+}
+
+function generateMonthLabels(months = 5) {
+  const labels = [];
+  const today = new Date();
+
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setMonth(d.getMonth() - i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    labels.push(`${y}-${m}`);
+  }
+
+  return labels;
 }
 
 async function fetchSummary() {
@@ -260,18 +297,38 @@ async function fetchSummary() {
   const endpoint = granularity.value === "week" ? "thisWeek" : "thisMonth";
 
   try {
-    const res = await api.get(`/report/${endpoint}/${organization_id.value}/${userID}`);
-    summaryData.value = {
+    const queryParam = granularity.value === "week" ? "weeks" : "months";
+    const res = await api.get(`/report/${endpoint}/${organization_id.value}/${userID}?${queryParam}=5`);
+    
+    summaryData1.value = {
       TotalWorkHours: round2(res.data[0].TotalWorkHours),
       TotalOTHours: round2(res.data[0].TotalOTHours),
       OTHoursPerson: round2(res.data[0].OTHoursPerson),
       OTHeadcounts: round2(res.data[0].OTHeadcounts),
     };
-    LastSummary.value = {
+    summaryData2.value = {
       TotalWorkHours: round2(res.data[1].TotalWorkHours),
       TotalOTHours: round2(res.data[1].TotalOTHours),
       OTHoursPerson: round2(res.data[1].OTHoursPerson),
       OTHeadcounts: round2(res.data[1].OTHeadcounts),
+    };
+    summaryData3.value = {
+      TotalWorkHours: round2(res.data[2].TotalWorkHours),
+      TotalOTHours: round2(res.data[2].TotalOTHours),
+      OTHoursPerson: round2(res.data[2].OTHoursPerson),
+      OTHeadcounts: round2(res.data[2].OTHeadcounts),
+    };
+    summaryData4.value = {
+      TotalWorkHours: round2(res.data[3].TotalWorkHours),
+      TotalOTHours: round2(res.data[3].TotalOTHours),
+      OTHoursPerson: round2(res.data[3].OTHoursPerson),
+      OTHeadcounts: round2(res.data[3].OTHeadcounts),
+    };
+    summaryData5.value = {
+      TotalWorkHours: round2(res.data[4].TotalWorkHours),
+      TotalOTHours: round2(res.data[4].TotalOTHours),
+      OTHoursPerson: round2(res.data[4].OTHoursPerson),
+      OTHeadcounts: round2(res.data[4].OTHeadcounts),
     };
     updateChart();
   } catch (err) {
@@ -301,7 +358,7 @@ async function fetchDepartments() {
     const res = await api.get(`/report/inChargeDepartment/${userID}`);
     departments.value = res.data;
     if (!selectedDepartment.value && res.data.length > 0) {
-      selectedDepartment.value = res.data[0]; // 預設選第一個
+      selectedDepartment.value = res.data[0]; 
     }
   } catch (err) {
     console.error("📛 Department API failed", err);

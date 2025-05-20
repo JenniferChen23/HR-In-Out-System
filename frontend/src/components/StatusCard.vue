@@ -64,11 +64,11 @@ const statusClass = computed(() => {
 }
 
 .absent {
-  background-color: rgba(255, 0, 0, 0.3); 
+  background-color: rgba(255, 255, 0, 0.3); 
 }
 
 .abnormal {
-  background-color: rgba(96, 96, 96, 0.3); 
+  background-color: rgba(255, 0, 0, 0.3); 
 }
 
 .day-off {
