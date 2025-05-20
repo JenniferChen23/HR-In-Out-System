@@ -6,7 +6,6 @@
           <v-col cols="auto">
             <h3 class="ma-0">Department</h3>
           </v-col>
-          <!-- Department 下拉選單 -->
           <v-col cols="12" sm="4">
             <v-select
               v-model="selectedDepartment"
@@ -25,7 +24,6 @@
           <v-col cols="auto">
             <h3 class="ma-0">Date</h3>
           </v-col>
-          <!-- 日期選擇 -->
           <v-col cols="12" sm="4">
             <v-text-field
               v-model="selectedDate"
@@ -47,9 +45,7 @@
             </v-radio-group>
           </v-col>
         </v-row>
-        <!-- 出勤表格 -->
         <StatusTable :headers="headers" :items="items" />
-
         <v-row justify="center" class="mt-4">
           <v-col cols="auto">
             <v-btn color="black" variant="tonal" @click="exportCSV">
@@ -68,10 +64,9 @@
 </template>
 
 <script setup>
-// import axios from "axios";
+import api from "@/api";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { onMounted, ref } from "vue";
-import api from "@/api";
 
 import StatusTable from "@/components/StatusTable.vue";
 import SideBar from "../components/SideBar.vue";
@@ -94,7 +89,6 @@ const headers = ref([
   { text: "Name", value: "name" },
 ]);
 
-// const token = localStorage.getItem("jwt") || "";
 const userID = localStorage.getItem("userID") || "";
 console.log(userID);
 const departments = ref([]);
@@ -135,12 +129,12 @@ async function fetchDepartments() {
     const data = response.data;
 
     departments.value = [
-      { text: "All", value: "" }, // 顯示用 All
+      { text: "All", value: "" },
       ...data.map((depName) => {
         const found = organizations.find((org) => org.name === depName);
         return found
           ? { text: found.name, value: found.organization_id }
-          : { text: depName, value: depName }; // fallback in case not matched
+          : { text: depName, value: depName }; 
       }),
     ];
   } catch (error) {
@@ -207,7 +201,7 @@ function getExportRange() {
     const year = baseDate.getFullYear();
     const month = baseDate.getMonth();
     const fromDate = format(new Date(year, month, 1), "yyyy-MM-dd");
-    const toDate = format(new Date(year, month + 1, 0), "yyyy-MM-dd"); // 最後一天
+    const toDate = format(new Date(year, month + 1, 0), "yyyy-MM-dd"); 
     return { fromDate, toDate };
   }
 }

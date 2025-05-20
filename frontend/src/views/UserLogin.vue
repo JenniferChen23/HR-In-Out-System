@@ -29,11 +29,10 @@
 </template>
 
 <script setup>
-import api from "@/api"; // @ 代表 src 目錄
+import api from "@/api";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
-// 用 ref 來存使用者輸入
 const email = ref("");
 const password = ref("");
 
@@ -72,7 +71,7 @@ h2 {
 .login-page {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 這樣內容（input, button）就會置中 */
+  align-items: center;
   margin-top: 0px;
 }
 .centered-input {

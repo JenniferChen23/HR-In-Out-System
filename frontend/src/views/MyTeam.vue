@@ -172,7 +172,6 @@ import SelectBox from "../components/SelectBox.vue";
 import SideBar from "../components/SideBar.vue";
 import WorkSummaryCard from "../components/SummaryCard.vue";
 
-// 🟦 基本資料
 const userID = localStorage.getItem("userID") || "";
 const departments = ref([]);
 const selectedDepartment = ref(null);
@@ -194,7 +193,6 @@ const organizations = [
   { name: "IT Support", organization_id: "L121" },
 ];
 
-// 🟦 Summary 與 Chart 相關
 const granularity = ref("week");
 const summaryData = ref({});
 const LastSummary = ref({});
@@ -213,17 +211,13 @@ const selectedMetricText = computed(() => {
   return found?.text || "";
 });
 
-// 🟦 日期
 const Startdate = ref(new Date());
 const Enddate = ref(new Date());
 const formattedStartDate = computed(() => formatDateToYMD(Startdate.value));
 const formattedEndDate = computed(() => formatDateToYMD(Enddate.value));
-
-// 🟦 Alert List
 const alertList = ref([]);
 const search = ref("");
 
-// 🟦 表格欄位
 const headers = [
   { text: "Total Work Hours", value: "TotalWorkHours" },
   { text: "Total OT Hours", value: "TotalOTHours" },
@@ -239,7 +233,6 @@ const headers2 = [
   { text: "Status", value: "status" },
 ];
 
-// 🟦 函式
 function formatDateToYMD(date) {
   if (!(date instanceof Date)) return "";
   const y = date.getFullYear();
@@ -315,7 +308,6 @@ async function fetchDepartments() {
   }
 }
 
-// 🟦 監聽
 watch([selectedDepartment, granularity], () => {
   if (organization_id.value) fetchSummary();
 });
@@ -325,10 +317,9 @@ watch([formattedStartDate, formattedEndDate], () => {
 });
 
 watch(selectedMetric, () => {
-  updateChart(); // 切換欄位立即更新圖表
+  updateChart(); 
 });
 
-// 🟦 初始載入
 onMounted(() => {
   fetchDepartments();
 });

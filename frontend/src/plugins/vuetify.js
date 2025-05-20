@@ -9,7 +9,7 @@ export default createVuetify({
     themes: {
       light: {
         colors: {
-          "data-table-header": "#808080", // 設定 v-data-table header 為灰色
+          "data-table-header": "#808080", 
         },
       },
     },

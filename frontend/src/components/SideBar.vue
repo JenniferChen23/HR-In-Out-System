@@ -1,6 +1,5 @@
 <template>
   <v-app>
-    <!-- 上方 ToolBar -->
     <v-app-bar app color="white" elevation="2">
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-img
@@ -10,12 +9,9 @@
         class="ml-2"
         contain
       ></v-img>
-      <v-toolbar-title style="font-size: 25px; font-weight: bold"
-        >HR-In-Out System</v-toolbar-title
-      >
+      <v-toolbar-title style="font-size: 25px; font-weight: bold">HR-In-Out System</v-toolbar-title>
     </v-app-bar>
 
-    <!-- 側邊欄 Drawer -->
     <v-navigation-drawer app v-model="drawer">
       <v-list-item
         :title="userName"
@@ -50,10 +46,8 @@
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 主內容區域 -->
     <v-main>
       <v-container>
-        <!-- 使用 slot 來接收父頁面傳來的內容 -->
         <slot></slot>
       </v-container>
     </v-main>

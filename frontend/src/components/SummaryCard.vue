@@ -35,11 +35,11 @@ export default {
   computed: {
     arrowSymbol() {
       if (Number(this.totalWorkHours) > Number(this.lastRecord)) {
-        return "↑"; // 上升
+        return "↑"; 
       } else if (Number(this.totalWorkHours) < Number(this.lastRecord)) {
-        return "↓"; // 下降
+        return "↓"; 
       } else {
-        return "-"; // 相同
+        return "-"; 
       }
     },
     arrowColor() {
@@ -57,7 +57,7 @@ export default {
 
 <style>
 .displayAll {
-  display: inline-block; /* 讓 <div> 受 text-align 影響 */
+  display: inline-block; 
   text-align: center;
   width: 150px;
   height: 100px;
@@ -65,10 +65,10 @@ export default {
 }
 .display {
   display: flex;
-  align-items: end; /* 靠左對齊 */
+  align-items: end;
   justify-content: center;
-  font-size: 30px; /* 修正：text-size 應為 font-size */
-  margin: 1px; /* 修正：margine 應為 margin */
+  font-size: 30px; 
+  margin: 1px; 
   width: 100%;
 }
 .Note {

@@ -3,19 +3,18 @@
 </template>
 
 <script>
-import { computed } from "vue";
-import { Bar } from "vue-chartjs";
 import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
   BarElement,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
+  Title,
+  Tooltip,
 } from "chart.js";
+import { computed } from "vue";
+import { Bar } from "vue-chartjs";
 
-// 註冊 Chart.js 元件
 ChartJS.register(
   Title,
   Tooltip,
@@ -38,7 +37,7 @@ export default {
     },
     granularity: {
       type: String,
-      default: "month", // 'week' or 'month'
+      default: "month",
     },
     data: {
       type: Array,
@@ -51,7 +50,6 @@ export default {
     },
   },
   setup(props) {
-    // 計算屬性：動態生成 chartData
     const computedChartData = computed(() => ({
       labels: props.labels,
       datasets: [
@@ -63,7 +61,6 @@ export default {
       ],
     }));
 
-    // 圖表選項（包含動態表頭）
     const chartOptions = computed(() => ({
       responsive: true,
       plugins: {

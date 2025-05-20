@@ -4,7 +4,6 @@ const api = axios.create({
   baseURL: process.env.VUE_APP_API_BASE_URL,
 });
 
-// 在每次發 request 前，自動加入 Authorization header
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("jwt");

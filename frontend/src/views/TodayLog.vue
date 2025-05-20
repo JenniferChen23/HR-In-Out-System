@@ -69,7 +69,6 @@
               Search
             </v-btn>
           </v-row>
-          <!-- 使用 DataTable 組件，並傳遞資料 -->
           <DataTable :show-headers="headers" :items="records" />
         </v-card>
         <div class="export">
@@ -109,7 +108,6 @@ const headers = [
   { text: "ClockInGate", value: "ClockInGate" },
   { text: "ClockOutGate", value: "ClockOutGate" },
   { text: "Status", value: "status" },
-  // { text: "Duration", value: "Duration" }, //後端沒寫所以先不放
 ];
 
 console.log("fetchHistoryRecords id:", userID);
@@ -118,7 +116,6 @@ async function fetchTodayRecords() {
   try {
     const response = await api.get(`/report/myRecords/${userID}`);
     if (response && response.data) {
-      // 包成陣列並轉成 template 用的 key
       todayRecord.value = [
         {
           date: response.data.date,
@@ -157,8 +154,6 @@ async function fetchHistoryRecords() {
 
 async function fetchPeriodTime() {
   try {
-    // const deparementID = await api.get(`/report/myDepartments/${userID}`);
-    // deparement = deparementID.data;
     const response = await api.get(
       `/report/historyRecords/${userID}/${formattedStartDate.value}/${formattedEndDate.value}`
     );
@@ -181,7 +176,7 @@ async function fetchPeriodTime() {
 function downloadFile(url, filename) {
   api
     .get(url, {
-      responseType: "blob", // 👈 關鍵在這行
+      responseType: "blob",
     })
     .then((response) => {
       const blob = new Blob([response.data]);
@@ -224,7 +219,7 @@ function exportAsPDF() {
 function formatDateToYMD(date) {
   if (!(date instanceof Date)) return "";
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0"); // 月份從 0 開始
+  const month = String(date.getMonth() + 1).padStart(2, "0"); 
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
@@ -258,7 +253,7 @@ h2 {
 .login-page {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 這樣內容（input, button）就會置中 */
+  align-items: center;
   margin-top: 0px;
 }
 .centered-input {

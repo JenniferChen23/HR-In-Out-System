@@ -113,7 +113,7 @@ export default {
     },
   },
   setup() {
-    const showDetail = ref(false); // 控制 dialog 開關
+    const showDetail = ref(false);
     const detailData = ref({
       date: "",
       employeeId: "",
@@ -125,7 +125,6 @@ export default {
       clockOutGate: "",
     });
 
-    // 這個是點擊 StatusCard 時要呼叫的
     function openDetail(item, dateKey) {
       const detail = item[dateKey];
       detailData.value = {

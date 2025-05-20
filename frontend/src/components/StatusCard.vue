@@ -26,7 +26,6 @@ const props = defineProps({
   },
 });
 
-// 使用 computed 判斷 content，並返回相對應的類名
 const statusClass = computed(() => {
   switch (props.content) {
     case "On Time":
@@ -42,34 +41,34 @@ const statusClass = computed(() => {
     case "Day Off":
       return "day-off";
     case "Alert":
-      return "alert"; // 改為小寫開頭，以符合 CSS class 通常的小寫格式
+      return "alert"; 
     case "Warning":
-      return "warning"; // 同上，改為小寫
+      return "warning"; 
     default:
-      return ""; // 提供一個預設的類名，方便調試
+      return ""; 
   }
 });
 </script>
 
 <style scoped>
 .on-time {
-  background-color: rgba(30, 154, 108, 0.3); /* 綠色 */
+  background-color: rgba(30, 154, 108, 0.3); 
 }
 
 .late {
-  background-color: rgba(223, 155, 8, 0.3); /* 橘黃色 */
+  background-color: rgba(223, 155, 8, 0.3); 
 }
 
 .leave-early {
-  background-color: rgba(255, 165, 0, 0.3); /* 淺橘色 */
+  background-color: rgba(255, 165, 0, 0.3); 
 }
 
 .absent {
-  background-color: rgba(255, 0, 0, 0.3); /* 紅色 */
+  background-color: rgba(255, 0, 0, 0.3); 
 }
 
 .abnormal {
-  background-color: rgba(96, 96, 96, 0.3); /* 灰色 */
+  background-color: rgba(96, 96, 96, 0.3); 
 }
 
 .day-off {
