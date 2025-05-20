@@ -68,7 +68,6 @@
             <v-btn prepend-icon="mdi-magnify" @click="fetchPeriodTime">
               Search
             </v-btn>
-            {{ formattedStartDate }} {{ formattedEndDate }}
           </v-row>
           <!-- 使用 DataTable 組件，並傳遞資料 -->
           <DataTable :show-headers="headers" :items="records" />
@@ -83,12 +82,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import api from "@/api";
+import { computed, onMounted, ref } from "vue";
 import DataTable from "../components/DataTable.vue";
+import ExportButton from "../components/ExportButton.vue";
 import SideBar from "../components/SideBar.vue";
 import StatusCard from "../components/StatusCard.vue";
-import ExportButton from "../components/ExportButton.vue";
-import api from "@/api";
 
 const todayRecord = ref([]);
 const records = ref([]);
