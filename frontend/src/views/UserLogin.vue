@@ -29,9 +29,9 @@
 </template>
 
 <script setup>
+import api from "@/api"; // @ 代表 src 目錄
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import api from "@/api"; // @ 代表 src 目錄
 
 // 用 ref 來存使用者輸入
 const email = ref("");
@@ -42,18 +42,20 @@ const router = useRouter();
 async function login() {
   try {
     const response = await api.post("/auth/login", {
-      email: email.value, // 用變數帶入
-      password: password.value, // 用變數帶入
+      email: email.value,
+      password: password.value,
     });
 
     const { message, token, user } = response.data;
 
-    console.log(message); // "Login successful"
-    console.log(token); // "your.jwt.token"
-    console.log(user); // { id: 1, email: "...", name: "John Doe" }
+    console.log(message);
+    console.log(token); 
+    console.log(user); 
 
     localStorage.setItem("jwt", token);
     localStorage.setItem("userID", user.EmployeeID);
+    localStorage.setItem("userName", user.LastName);
+
     router.push("/today");
   } catch (err) {
     console.error("Login failed:", err.response?.data || err.message);

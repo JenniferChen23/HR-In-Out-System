@@ -18,7 +18,7 @@
     <!-- 側邊欄 Drawer -->
     <v-navigation-drawer app v-model="drawer">
       <v-list-item
-        title="Hi, Chen"
+        :title="userName"
         subtitle="check records below"
       ></v-list-item>
       <v-divider></v-divider>
@@ -65,12 +65,13 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
-  name: "TodayAttendance", // 拼字修正
+  name: "TodayAttendance", 
   components: {},
   setup() {
     const drawer = ref(false);
-
     const router = useRouter();
+
+    const userName = ref(localStorage.getItem("userName") || "User");
 
     function goToTodo(page) {
       router.push(page);
@@ -79,6 +80,7 @@ export default {
     return {
       drawer,
       goToTodo,
+      userName,
     };
   },
 };
@@ -93,7 +95,7 @@ h2 {
 .login-page {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 這樣內容（input, button）就會置中 */
+  align-items: center; 
   margin-top: 0px;
 }
 .centered-input {
