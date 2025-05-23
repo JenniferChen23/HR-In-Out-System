@@ -177,6 +177,9 @@ const organization_id = computed(() => {
   const found = organizations.find(d => d.name === selectedDepartment.value);
   return found?.organization_id ?? null;
 });
+const currentPeriod = computed(() => {
+  return granularity.value === "week" ? "week" : "month";
+});
 
 const organizations = [
   { name: "CEO", organization_id: "L1" },
